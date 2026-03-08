@@ -204,7 +204,9 @@
         var val = rows[r][i] === null ? 'NULL' : String(rows[r][i]);
         if (val.length > max) max = val.length;
       }
-      return Math.min(max, 45);
+      var charWidth = Math.floor(window.innerWidth / 8) - 4;
+      var limit = columns.length === 1 ? Math.max(30, charWidth) : 45;
+      return Math.min(max, limit);
     });
 
     var isNum = (types || []).map(function(t) { return ['int','float','numeric','bigint'].indexOf(t) !== -1; });
@@ -274,7 +276,7 @@
     if (upper.startsWith('EXPLAIN')) return cmdExplain();
 
     if (upper.startsWith('DROP')) {
-      printOutput('<span class="error">ERROR:  permission denied — this portfolio is immutable</span>');
+      printOutput('<span class="error">\n  ██████   ██████   ██████  ██████  ██ ██ ██\n  ██   ██ ██    ██ ██    ██ ██   ██ ██ ██ ██\n  ██████  ██    ██ ██    ██ ██████  ██ ██ ██\n  ██   ██ ██    ██ ██    ██ ██   ██\n  ██████   ██████   ██████  ██   ██ ██ ██ ██</span>\n\n<span class="error">  FATAL:  all tables destroyed. Portfolio gone forever.</span>\n<span class="error">  PANIC:  system shutting do—</span>\n\n<span class="dim">  ...</span>\n<span class="dim">  ...</span>\n\n<span class="accent">  Just kidding — ROLLBACK complete.</span>\n<span class="dim">  Nice try. This portfolio is immutable.</span>');
       return;
     }
     if (upper.startsWith('DELETE') || upper.startsWith('TRUNCATE')) {
@@ -282,7 +284,7 @@
       return;
     }
     if (upper.startsWith('INSERT')) {
-      printOutput('<span class="error">ERROR:  relation is read-only, accepting PRs on GitHub though</span>');
+      printOutput('<span class="error">ERROR:  relation is read-only — no INSERT allowed</span>');
       return;
     }
     if (upper.startsWith('UPDATE')) {
@@ -355,12 +357,40 @@
   }
 
   function cmdExplain() {
-    printOutput('\n<span class="dim">                          QUERY PLAN</span>\n<span class="dim">──────────────────────────────────────────────────────────</span>\n <span class="accent">Seq Scan on martjn</span>  (cost=0.00..∞ rows=1 width=amazing)\n   Filter: (awesome = true AND coffee_level > 0)\n   <span class="dim">→ Rows Removed by Filter: 0</span>\n   <span class="dim">→ Planning Time: since 2008</span>\n   <span class="dim">→ Execution Time: ongoing</span>\n<span class="dim">──────────────────────────────────────────────────────────</span>\n<span class="sql-rows"> Result: 1 highly motivated data engineer</span>');
+    printOutput('\n<span class="dim">                          QUERY PLAN</span>\n<span class="dim">──────────────────────────────────────────────────────────</span>\n <span class="accent">Seq Scan on martjn</span>  (cost=0.00..∞ rows=1 width=amazing)\n   Filter: (awesome = true AND coffee_level > 0)\n   <span class="dim">→ Rows Removed by Filter: 0</span>\n   <span class="dim">→ Nested Loop Join on hobbies (diving)</span>\n   <span class="dim">→ Index Scan using idx_skills on brain (capacity=94%)</span>\n   <span class="dim">→ Workers Planned: 3 (coffee, curiosity, deadlines)</span>\n   <span class="dim">→ Planning Time: since 1980</span>\n   <span class="dim">→ Execution Time: ongoing</span>\n<span class="dim">──────────────────────────────────────────────────────────</span>\n<span class="sql-rows"> Result: 1 unique human found — no duplicates</span>');
   }
 
   // ===================== SELECT PARSER =====================
   function cmdSelect(input) {
     var upper = input.toUpperCase().replace(/\s+/g, ' ');
+
+    // Special: random thoughts
+    if (upper.indexOf('THOUGHTS') !== -1) {
+      var thoughts = [
+        'The best code is the code you never had to write.',
+        'There are only two hard things: cache invalidation and naming things.',
+        'SELECT sleep FROM life WHERE hours > 6; — 0 rows returned.',
+        'In a world of NoSQL, be someone\'s JOIN.',
+        'Every dive is a reminder that the real production is underwater.',
+        'Bitcoin fixes this. Whatever "this" is.',
+        'Data without context is just expensive storage.',
+        'The ocean doesn\'t care about your sprint deadline.',
+        'rm -rf doubts && git commit -m "full send"',
+        'Mass doesn\'t compress. Neither does curiosity.',
+        'Not your keys, not your coins. Not your data, not your insights.',
+        'Somewhere between 10m depth and 10k blocks, I found focus.',
+        'A clean dataset is worth more than a fancy model.',
+        'Breathe. Equalize. Descend. Same applies to debugging.',
+      ];
+      if (upper.indexOf('RANDOM()') !== -1) {
+        var thought = thoughts[Math.floor(Math.random() * thoughts.length)];
+        printOutput(renderTable(['thought'], [[thought]], ['varchar']));
+      } else {
+        var rows = thoughts.map(function(t) { return [t]; });
+        printOutput(renderTable(['thought'], rows, ['varchar']));
+      }
+      return;
+    }
 
     // Special: uptime query
     if (upper.indexOf('DATEDIFF') !== -1) {
@@ -622,25 +652,25 @@
   // ===================== DYNAMIC SEO =====================
   (function generateSEO() {
     var p = {};
-    TABLES.profile.rows.forEach(function(r) { p[r[0]] = r[1]; });
+    TABLES.profile.rows.forEach(function(r) { p[r[1]] = r[2]; });
 
     var skillsByCategory = {};
     TABLES.skills.rows.forEach(function(r) {
-      var cat = r[1];
+      var cat = r[2];
       if (!skillsByCategory[cat]) skillsByCategory[cat] = [];
-      skillsByCategory[cat].push(r[0]);
+      skillsByCategory[cat].push(r[1]);
     });
 
     var certs = TABLES.dive_certs.rows.map(function(r) {
       return {
         '@type': 'EducationalOccupationalCredential',
-        name: r[0] + ' (' + r[1] + ')',
+        name: r[1] + ' (' + r[2] + ')',
         credentialCategory: 'certification',
-        recognizedBy: { '@type': 'Organization', name: r[2] }
+        recognizedBy: { '@type': 'Organization', name: r[3] }
       };
     });
 
-    var knowsAbout = TABLES.skills.rows.map(function(r) { return r[0]; });
+    var knowsAbout = TABLES.skills.rows.map(function(r) { return r[1]; });
 
     var jsonLd = {
       '@context': 'https://schema.org',
@@ -665,7 +695,7 @@
       skillsHtml += '<li>' + (catLabels[cat] || cat) + ': ' + skillsByCategory[cat].join(', ') + '</li>';
     });
 
-    var certNames = TABLES.dive_certs.rows.map(function(r) { return r[0]; }).join(', ');
+    var certNames = TABLES.dive_certs.rows.map(function(r) { return r[1]; }).join(', ');
     var diveCount = TABLES.dive_log.rows.length;
 
     var seoEl = document.getElementById('seo-content');

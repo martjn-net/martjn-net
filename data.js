@@ -1,11 +1,16 @@
 // ===================== CONSTANTS =====================
 var VERSION = 'martjn_db v1.0';
 var HEX_CHARS = '0123456789abcdef';
-var UPTIME_START = '1980-07-' + String(Math.floor(Math.random() * 31) + 1).replace(/^(\d)$/, '0$1');
+var UPTIME_START = (function() {
+  var start = new Date(1980, 3, 1);
+  var range = 275;
+  var d = new Date(start.getTime() + Math.floor(Math.random() * range) * 86400000);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).replace(/^(\d)$/, '0$1') + '-' + String(d.getDate()).replace(/^(\d)$/, '0$1');
+})();
 
 // ===================== TABLE SCHEMA =====================
 var TABLE_SCHEMA = {
-  profile: 'public', skills: 'public', tools: 'public',
+  users: 'public', profile: 'public', skills: 'public', tools: 'public',
   dive_log: 'diving', dive_certs: 'diving', dive_stats: 'diving',
   blocks: 'blockchain', transactions: 'blockchain', addresses: 'blockchain', mempool: 'blockchain'
 };
@@ -52,38 +57,46 @@ var RECENT_3 = NOW_HEIGHT - Math.floor(Math.random() * 1000 + 300);
 
 // ===================== TABLES =====================
 var TABLES = {
-  profile: {
-    columns: ['key', 'value'],
-    types: ['varchar', 'varchar'],
+  users: {
+    columns: ['id', 'name'],
+    types: ['int', 'varchar'],
     rows: [
-      ['name', 'Martin'],
-      ['mail', '__IMG__'],
-      ['role', 'Data & Crypto Enthusiast · Diver'],
-      ['location', 'Germany'],
-      ['website', 'https://martjn.net'],
-      ['uptime', UPTIME_START],
-      ['motto', 'Making data flow — from raw events to actionable insights.'],
+      [1, 'martjn'],
+      [2, 'DROP TABLE martjn;'],
+    ]
+  },
+  profile: {
+    columns: ['user_id', 'key', 'value'],
+    types: ['int', 'varchar', 'varchar'],
+    rows: [
+      [1, 'name', 'Martin'],
+      [1, 'mail', '__IMG__'],
+      [1, 'role', 'Data & Crypto Enthusiast · Diver'],
+      [1, 'location', 'Germany'],
+      [1, 'website', 'https://martjn.net'],
+      [1, 'motto', 'Making data flow — from raw events to actionable insights.'],
     ]
   },
   skills: {
-    columns: ['skill', 'category'],
-    types: ['varchar', 'varchar'],
+    columns: ['user_id', 'skill', 'category'],
+    types: ['int', 'varchar', 'varchar'],
     rows: [
-      ['Python',     'language'],
-      ['SQL',        'language'],
-      ['Bash',       'language'],
-      ['JavaScript', 'language'],
-      ['BigQuery',   'database'],
-      ['PostgreSQL', 'database'],
-      ['MySQL',      'database'],
-      ['GCP',        'cloud'],
-      ['Docker',     'cloud'],
-      ['Linux',      'infra'],
-      ['Git',        'tool'],
-      ['REST APIs',  'tool'],
-      ['ETL',        'concept'],
-      ['Crypto',     'interest'],
-      ['Diving',     'interest'],
+      [1, 'Python',     'language'],
+      [1, 'SQL',        'language'],
+      [1, 'Bash',       'language'],
+      [1, 'JavaScript', 'language'],
+      [1, 'BigQuery',   'database'],
+      [1, 'PostgreSQL', 'database'],
+      [1, 'MySQL',      'database'],
+      [1, 'GCP',        'cloud'],
+      [1, 'Docker',     'cloud'],
+      [1, 'Linux',      'infra'],
+      [1, 'Git',        'tool'],
+      [1, 'REST APIs',  'tool'],
+      [1, 'ETL',        'concept'],
+      [1, 'Web3',       'concept'],
+      [1, 'Crypto',     'interest'],
+      [1, 'Diving',     'interest'],
     ]
   },
   tools: {
@@ -106,46 +119,46 @@ var TABLES = {
     ]
   },
   dive_log: {
-    columns: ['dive_no', 'date', 'type', 'site', 'location', 'max_depth_m', 'duration', 'water_temp_c', 'visibility_m', 'buddy', 'notes'],
-    types: ['int', 'varchar', 'varchar', 'varchar', 'varchar', 'float', 'varchar', 'float', 'int', 'varchar', 'text'],
+    columns: ['user_id', 'dive_no', 'date', 'type', 'site', 'location', 'max_depth_m', 'duration', 'water_temp_c', 'visibility_m', 'buddy', 'notes'],
+    types: ['int', 'int', 'varchar', 'varchar', 'varchar', 'varchar', 'float', 'varchar', 'float', 'int', 'varchar', 'text'],
     rows: [
-      [1,   '2021-06-15', 'scuba',  'Fühlinger See',       'Köln, DE',         8.2,  '42 min',   18.0,  4,  'Jens',      'First open water dive after DTSA*'],
-      [2,   '2021-06-15', 'scuba',  'Fühlinger See',       'Köln, DE',        10.5,  '38 min',   17.5,  4,  'Jens',      'Compass navigation practice'],
-      [3,   '2021-09-20', 'free',   'Pool',                'Düsseldorf, DE',   2.0,  '1:30 min',  28.0, 25,  'Solo',      'First STA training, breathing technique'],
-      [4,   '2021-11-08', 'free',   'Pool',                'Düsseldorf, DE',   3.0,  '1:55 min',  27.0, 25,  'Solo',      'STA progress, relaxation improving'],
-      [5,   '2022-02-10', 'free',   'Pool',                'Düsseldorf, DE',   3.5,  '2:15 min',  28.0, 25,  'Solo',      'STA new PB, contractions from 1:50'],
-      [6,   '2022-06-22', 'scuba',  'Blauer See',          'Ratingen, DE',    15.0,  '45 min',   14.0,  5,  'Jens',      'Explored old concrete structures on bottom'],
-      [7,   '2022-07-14', 'free',   'Banana Beach',        'Zakynthos, GR',   10.0,  '1:35 min',  25.0, 20,  'Solo',      'CWT first Frenzel attempts in open water'],
-      [8,   '2022-07-15', 'scuba',  'Zakynthos Caves',     'Zakynthos, GR',   18.0,  '48 min',   22.0, 30,  'Nikos',     'Sea turtles inside the cave!'],
-      [9,   '2022-07-16', 'free',   'Banana Beach',        'Zakynthos, GR',   14.5,  '1:48 min',  25.0, 22,  'Solo',      'CWT Frenzel working down to 14m'],
-      [10,  '2023-03-12', 'free',   'Pool',                'Düsseldorf, DE',   3.5,  '65 m DYN',  27.0, 25,  'Solo',      'DYN with fins, improved streamline'],
-      [11,  '2023-05-30', 'scuba',  'Sundhäuser See',      'Nordhausen, DE',  18.0,  '44 min',   10.0,  6,  'Alex',      'Underwater park with sunken objects'],
-      [12,  '2023-08-14', 'free',   'Krk Island',          'Krk, HR',         18.3,  '1:52 min',  24.0, 25,  'Marco',     'CWT along the cliff, clean Frenzel'],
-      [13,  '2023-08-15', 'free',   'Krk Island',          'Krk, HR',         21.0,  '2:00 min',  24.0, 25,  'Marco',     'New depth PB, mouthfill from 15m'],
-      [14,  '2023-08-16', 'scuba',  'Plavnik Wall',        'Krk, HR',         20.0,  '50 min',   18.0, 20,  'Marco',     'Wall dive, spotted eagle ray'],
-      [15,  '2024-01-15', 'free',   'Pool',                'Düsseldorf, DE',   3.5,  '3:02 min',  27.0, 25,  'Solo',      'STA new PB 3:02, contractions from 2:20'],
-      [16,  '2024-04-22', 'free',   'Pool',                'Düsseldorf, DE',   3.5,  '82 m DYN',  27.0, 25,  'Solo',      'DYN PB, found the right kick rhythm'],
-      [17,  '2024-06-18', 'free',   'Lago di Garda',       'Gardasee, IT',    24.0,  '2:10 min',  22.0, 15,  'Marco',     'FIM training, clean mouthfill from 18m'],
-      [18,  '2024-06-19', 'free',   'Lago di Garda',       'Gardasee, IT',    26.5,  '2:18 min',  21.0, 15,  'Marco',     'CWT new PB! Enjoyed freefall from 20m'],
-      [19,  '2025-03-25', 'free',   'Pool',                'Düsseldorf, DE',   3.5,  '90 m DYN',  27.0, 25,  'Solo',      'DYN new PB, passed AIDA3 exam'],
-      [20,  '2025-07-10', 'scuba',  'Ras Mohammed',        'Sharm el-Sheikh, EG', 18.0, '52 min', 28.0, 35, 'Ahmed',     'Shark Reef, incredible visibility'],
-      [21,  '2025-07-12', 'free',   'Blue Hole',           'Dahab, EG',       28.0,  '2:25 min',  26.0, 40,  'Solo',      'CWT new PB 28m, saw The Arch from above'],
-      [22,  '2025-07-13', 'free',   'Blue Hole',           'Dahab, EG',       25.0,  '2:15 min',  26.0, 40,  'Solo',      'FIM relaxation dive, dolphins!'],
-      [23,  '2025-08-08', 'free',   'Kornati Islands',     'Murter, HR',      27.0,  '2:20 min',  24.0, 30,  'Marco',     'CWT between the islands, octopus at 15m'],
-      [24,  '2025-08-09', 'scuba',  'Kornati Wreck',       'Murter, HR',      16.0,  '55 min',   20.0, 18,  'Marco',     'Small fishing wreck, relaxed dive'],
-      [25,  '2025-11-14', 'free',   'Pool',                'Düsseldorf, DE',   3.5,  '3:15 min',  27.0, 25,  'Solo',      'STA new PB 3:15! Mental calm was the key'],
-      [26,  '2026-02-22', 'free',   'Pool',                'Düsseldorf, DE',   4.0,  '95 m DYN',  27.0, 25,  'Solo',      'Pool training, DYN new PB, 100m within reach'],
+      [1, 1,   '2021-06-15', 'scuba',  'Fühlinger See',       'Köln, DE',         8.2,  '42 min',   18.0,  4,  'Jens',      'First open water dive after DTSA*'],
+      [1, 2,   '2021-06-15', 'scuba',  'Fühlinger See',       'Köln, DE',        10.5,  '38 min',   17.5,  4,  'Jens',      'Compass navigation practice'],
+      [1, 3,   '2021-09-20', 'free',   'Pool',                'Düsseldorf, DE',   2.0,  '1:30 min',  28.0, 25,  'Solo',      'First STA training, breathing technique'],
+      [1, 4,   '2021-11-08', 'free',   'Pool',                'Düsseldorf, DE',   3.0,  '1:55 min',  27.0, 25,  'Solo',      'STA progress, relaxation improving'],
+      [1, 5,   '2022-02-10', 'free',   'Pool',                'Düsseldorf, DE',   3.5,  '2:15 min',  28.0, 25,  'Solo',      'STA new PB, contractions from 1:50'],
+      [1, 6,   '2022-06-22', 'scuba',  'Blauer See',          'Ratingen, DE',    15.0,  '45 min',   14.0,  5,  'Jens',      'Explored old concrete structures on bottom'],
+      [1, 7,   '2022-07-14', 'free',   'Banana Beach',        'Zakynthos, GR',   10.0,  '1:35 min',  25.0, 20,  'Solo',      'CWT first Frenzel attempts in open water'],
+      [1, 8,   '2022-07-15', 'scuba',  'Zakynthos Caves',     'Zakynthos, GR',   18.0,  '48 min',   22.0, 30,  'Nikos',     'Sea turtles inside the cave!'],
+      [1, 9,   '2022-07-16', 'free',   'Banana Beach',        'Zakynthos, GR',   14.5,  '1:48 min',  25.0, 22,  'Solo',      'CWT Frenzel working down to 14m'],
+      [1, 10,  '2023-03-12', 'free',   'Pool',                'Düsseldorf, DE',   3.5,  '65 m DYN',  27.0, 25,  'Solo',      'DYN with fins, improved streamline'],
+      [1, 11,  '2023-05-30', 'scuba',  'Sundhäuser See',      'Nordhausen, DE',  18.0,  '44 min',   10.0,  6,  'Alex',      'Underwater park with sunken objects'],
+      [1, 12,  '2023-08-14', 'free',   'Krk Island',          'Krk, HR',         18.3,  '1:52 min',  24.0, 25,  'Marco',     'CWT along the cliff, clean Frenzel'],
+      [1, 13,  '2023-08-15', 'free',   'Krk Island',          'Krk, HR',         21.0,  '2:00 min',  24.0, 25,  'Marco',     'New depth PB, mouthfill from 15m'],
+      [1, 14,  '2023-08-16', 'scuba',  'Plavnik Wall',        'Krk, HR',         20.0,  '50 min',   18.0, 20,  'Marco',     'Wall dive, spotted eagle ray'],
+      [1, 15,  '2024-01-15', 'free',   'Pool',                'Düsseldorf, DE',   3.5,  '3:02 min',  27.0, 25,  'Solo',      'STA new PB 3:02, contractions from 2:20'],
+      [1, 16,  '2024-04-22', 'free',   'Pool',                'Düsseldorf, DE',   3.5,  '82 m DYN',  27.0, 25,  'Solo',      'DYN PB, found the right kick rhythm'],
+      [1, 17,  '2024-06-18', 'free',   'Lago di Garda',       'Gardasee, IT',    24.0,  '2:10 min',  22.0, 15,  'Marco',     'FIM training, clean mouthfill from 18m'],
+      [1, 18,  '2024-06-19', 'free',   'Lago di Garda',       'Gardasee, IT',    26.5,  '2:18 min',  21.0, 15,  'Marco',     'CWT new PB! Enjoyed freefall from 20m'],
+      [1, 19,  '2025-03-25', 'free',   'Pool',                'Düsseldorf, DE',   3.5,  '90 m DYN',  27.0, 25,  'Solo',      'DYN new PB, passed AIDA3 exam'],
+      [1, 20,  '2025-07-10', 'scuba',  'Ras Mohammed',        'Sharm el-Sheikh, EG', 18.0, '52 min', 28.0, 35, 'Ahmed',     'Shark Reef, incredible visibility'],
+      [1, 21,  '2025-07-12', 'free',   'Blue Hole',           'Dahab, EG',       28.0,  '2:25 min',  26.0, 40,  'Solo',      'CWT new PB 28m, saw The Arch from above'],
+      [1, 22,  '2025-07-13', 'free',   'Blue Hole',           'Dahab, EG',       25.0,  '2:15 min',  26.0, 40,  'Solo',      'FIM relaxation dive, dolphins!'],
+      [1, 23,  '2025-08-08', 'free',   'Kornati Islands',     'Murter, HR',      27.0,  '2:20 min',  24.0, 30,  'Marco',     'CWT between the islands, octopus at 15m'],
+      [1, 24,  '2025-08-09', 'scuba',  'Kornati Wreck',       'Murter, HR',      16.0,  '55 min',   20.0, 18,  'Marco',     'Small fishing wreck, relaxed dive'],
+      [1, 25,  '2025-11-14', 'free',   'Pool',                'Düsseldorf, DE',   3.5,  '3:15 min',  27.0, 25,  'Solo',      'STA new PB 3:15! Mental calm was the key'],
+      [1, 26,  '2026-02-22', 'free',   'Pool',                'Düsseldorf, DE',   4.0,  '95 m DYN',  27.0, 25,  'Solo',      'Pool training, DYN new PB, 100m within reach'],
     ]
   },
   dive_certs: {
-    columns: ['cert', 'org', 'type', 'date', 'dives_at_cert'],
-    types: ['varchar', 'varchar', 'varchar', 'varchar', 'int'],
+    columns: ['user_id', 'cert', 'org', 'type', 'date', 'dives_at_cert'],
+    types: ['int', 'varchar', 'varchar', 'varchar', 'varchar', 'int'],
     rows: [
-      ['Grundtauchschein',  'VDST',  'scuba',  '2021-04-20',  0],
-      ['DTSA*',             'VDST',  'scuba',  '2021-06-15',  2],
-      ['AIDA*',             'AIDA',  'free',   '2022-03-01',  5],
-      ['AIDA**',            'AIDA',  'free',   '2023-08-15', 13],
-      ['AIDA***',           'AIDA',  'free',   '2025-03-25', 19],
+      [1, 'Grundtauchschein',  'VDST',  'scuba',  '2021-04-20',  0],
+      [1, 'DTSA*',             'VDST',  'scuba',  '2021-06-15',  2],
+      [1, 'AIDA*',             'AIDA',  'free',   '2022-03-01',  5],
+      [1, 'AIDA**',            'AIDA',  'free',   '2023-08-15', 13],
+      [1, 'AIDA***',           'AIDA',  'free',   '2025-03-25', 19],
     ]
   },
   dive_stats: {
@@ -153,38 +166,38 @@ var TABLES = {
     types: ['varchar', 'varchar'],
     get rows() {
       var log = TABLES.dive_log.rows;
-      var scuba = log.filter(function(r) { return r[2] === 'scuba'; });
-      var free = log.filter(function(r) { return r[2] === 'free'; });
+      var scuba = log.filter(function(r) { return r[3] === 'scuba'; });
+      var free = log.filter(function(r) { return r[3] === 'free'; });
 
-      var maxDepthScuba = Math.max.apply(null, scuba.map(function(r) { return r[5]; }));
-      var maxDepthFree = Math.max.apply(null, free.map(function(r) { return r[5]; }));
+      var maxDepthScuba = Math.max.apply(null, scuba.map(function(r) { return r[6]; }));
+      var maxDepthFree = Math.max.apply(null, free.map(function(r) { return r[6]; }));
 
-      var scubaTimes = scuba.map(function(r) { return parseInt(r[6]); }).filter(function(v) { return !isNaN(v); });
+      var scubaTimes = scuba.map(function(r) { return parseInt(r[7]); }).filter(function(v) { return !isNaN(v); });
       var maxBottomTime = Math.max.apply(null, scubaTimes);
 
-      var breathHolds = free.filter(function(r) { return r[6].indexOf(':') !== -1; })
-        .map(function(r) { var p = r[6].split(':'); return parseInt(p[0]) * 60 + parseInt(p[1]); });
+      var breathHolds = free.filter(function(r) { return r[7].indexOf(':') !== -1; })
+        .map(function(r) { var p = r[7].split(':'); return parseInt(p[0]) * 60 + parseInt(p[1]); });
       var maxBH = Math.max.apply(null, breathHolds);
       var bhMin = Math.floor(maxBH / 60);
       var bhSec = maxBH % 60;
 
-      var dynDists = free.filter(function(r) { return r[6].indexOf('DYN') !== -1; })
-        .map(function(r) { return parseInt(r[6]); });
+      var dynDists = free.filter(function(r) { return r[7].indexOf('DYN') !== -1; })
+        .map(function(r) { return parseInt(r[7]); });
       var maxDyn = dynDists.length ? Math.max.apply(null, dynDists) : 0;
 
       var countries = {};
       log.forEach(function(r) {
-        var parts = r[4].split(', ');
+        var parts = r[5].split(', ');
         if (parts.length > 1) countries[parts[parts.length - 1]] = true;
       });
       var countryList = Object.keys(countries).sort();
 
       var certs = TABLES.dive_certs.rows;
-      var scubaCert = certs.filter(function(r) { return r[2] === 'scuba'; }).pop();
-      var freeCert = certs.filter(function(r) { return r[2] === 'free'; }).pop();
-      var certStr = (scubaCert ? scubaCert[0] : '') + ' / ' + (freeCert ? freeCert[0] : '');
+      var scubaCert = certs.filter(function(r) { return r[3] === 'scuba'; }).pop();
+      var freeCert = certs.filter(function(r) { return r[3] === 'free'; }).pop();
+      var certStr = (scubaCert ? scubaCert[1] : '') + ' / ' + (freeCert ? freeCert[1] : '');
 
-      var firstYear = log[0] ? log[0][1].slice(0, 4) : '?';
+      var firstYear = log[0] ? log[0][2].slice(0, 4) : '?';
 
       return [
         ['Total Dives',         String(log.length)],
@@ -281,6 +294,7 @@ var SUGGESTIONS = {
     { label: 'About me',       query: 'SELECT * FROM profile;',               cat: 'data' },
     { label: 'Skills',         query: 'SELECT * FROM skills;',                cat: 'data' },
     { label: 'EXPLAIN me',     query: 'EXPLAIN SELECT * FROM martjn;',        cat: 'fun' },
+    { label: 'Random thought', query: 'SELECT RANDOM() FROM thoughts;',        cat: 'fun' },
     { label: 'Uptime',         query: 'SELECT DATEDIFF(NOW(), uptime) AS uptime FROM profile;', cat: 'fun' },
   ],
   bitcoin: [
@@ -309,15 +323,17 @@ var SUGGESTIONS = {
   ],
   schema: [
     { label: 'SHOW TABLES',           query: 'SHOW TABLES;',                    cat: 'schema' },
+    { label: 'DESCRIBE users',        query: 'DESCRIBE users;',                 cat: 'schema' },
     { label: 'DESCRIBE profile',      query: 'DESCRIBE profile;',               cat: 'schema' },
     { label: 'DESCRIBE skills',       query: 'DESCRIBE skills;',                cat: 'schema' },
+    { label: 'DESCRIBE tools',        query: 'DESCRIBE tools;',                 cat: 'schema' },
+    { label: 'DESCRIBE dive_log',     query: 'DESCRIBE dive_log;',               cat: 'schema' },
+    { label: 'DESCRIBE dive_certs',   query: 'DESCRIBE dive_certs;',             cat: 'schema' },
+    { label: 'DESCRIBE dive_stats',   query: 'DESCRIBE dive_stats;',             cat: 'schema' },
     { label: 'DESCRIBE blocks',       query: 'DESCRIBE blocks;',                cat: 'schema' },
     { label: 'DESCRIBE transactions', query: 'DESCRIBE transactions;',           cat: 'schema' },
     { label: 'DESCRIBE addresses',    query: 'DESCRIBE addresses;',              cat: 'schema' },
     { label: 'DESCRIBE mempool',      query: 'DESCRIBE mempool;',                cat: 'schema' },
-    { label: 'DESCRIBE dive_log',     query: 'DESCRIBE dive_log;',               cat: 'schema' },
-    { label: 'DESCRIBE dive_certs',   query: 'DESCRIBE dive_certs;',             cat: 'schema' },
-    { label: 'DESCRIBE dive_stats',   query: 'DESCRIBE dive_stats;',             cat: 'schema' },
   ],
 };
 
