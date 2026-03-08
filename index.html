@@ -3,24 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Martin — Data Engineer @ sipgate | martjn.net</title>
-<meta name="description" content="Martin is a Data Engineer at sipgate, building ETL pipelines and data platforms with Python, BigQuery, and MySQL. Also a certified scuba and freediver.">
-<meta name="author" content="Martin">
+<title>martjn — Data & Crypto Enthusiast · Diver | martjn.net</title>
+<meta name="description" content="Data & Crypto Enthusiast and certified diver. Interactive SQL terminal with dive logbook and blockchain data.">
+<meta name="author" content="martjn">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://martjn.net">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Martin — Data Engineer @ sipgate">
-<meta property="og:description" content="Data Engineer building ETL pipelines and data platforms. Python, BigQuery, MySQL. Interactive SQL portfolio.">
+<meta property="og:title" content="martjn — Data & Crypto Enthusiast · Diver">
+<meta property="og:description" content="Data & Crypto Enthusiast. Certified diver. Interactive SQL terminal with dive logbook and blockchain data.">
 <meta property="og:url" content="https://martjn.net">
 <meta property="og:site_name" content="martjn.net">
 <meta property="og:locale" content="en_US">
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Martin — Data Engineer @ sipgate">
-<meta name="twitter:description" content="Data Engineer building ETL pipelines and data platforms. Interactive SQL portfolio.">
+<meta name="twitter:title" content="martjn — Data & Crypto Enthusiast · Diver">
+<meta name="twitter:description" content="Data & Crypto Enthusiast. Certified diver. Interactive SQL terminal with blockchain data.">
 
 <link rel="stylesheet" href="style.css">
 </head>
@@ -31,15 +31,15 @@
 
 <noscript>
   <div style="background:#0a0a0a;color:#e8e8e8;font-family:monospace;padding:40px;min-height:100vh">
-    <h1>Martin — Data Engineer @ sipgate</h1>
-    <p>This interactive SQL portfolio requires JavaScript to run. Here's a summary:</p>
+    <h1>martjn — Data & Crypto Enthusiast · Diver</h1>
+    <p>This interactive SQL terminal requires JavaScript to run. Here's a summary:</p>
     <h2>About</h2>
-    <p>Data Engineer building ETL pipelines and data platforms with Python, BigQuery, and MySQL at sipgate.</p>
+    <p>Data & Crypto Enthusiast and certified scuba and freediver from Germany.</p>
     <h2>Skills</h2>
-    <p>Python, JavaScript, SQL, Bash, BigQuery, MySQL, Google Cloud, Docker, Linux, Git, REST APIs</p>
+    <p>Python, JavaScript, SQL, Bash, BigQuery, MySQL, Docker, Linux, Git, Crypto</p>
     <h2>Diving</h2>
     <p>DTSA* (Scuba, VDST) and AIDA*** (Freediving) certified. 26 logged dives across Germany and Europe.</p>
-    <p><a href="https://github.com/martjn-net" style="color:#00d4aa">GitHub</a> · <a href="https://martjn.net" style="color:#00d4aa">martjn.net</a></p>
+    <p><a href="https://martjn.net" style="color:#00d4aa">martjn.net</a></p>
   </div>
 </noscript>
 
@@ -57,7 +57,7 @@
     </div>
   </div>
 
-  <div id="terminal" tabindex="0">
+  <div id="terminal" class="thin-scrollbar" tabindex="0">
     <div id="output"></div>
     <div id="input-line" style="display:none">
       <span class="prompt-db">martjn_db</span><span class="prompt-arrow">=&gt; </span>
@@ -72,7 +72,7 @@
       <button class="query-tab tab-btc" data-tab="bitcoin"><span class="tab-icon">&#8383;</span> Bitcoin</button>
       <button class="query-tab" data-tab="schema"><span class="tab-icon">#</span>Schema</button>
     </div>
-    <div id="query-suggestions"></div>
+    <div id="query-suggestions" class="thin-scrollbar"></div>
   </div>
 
   <div id="status-bar">

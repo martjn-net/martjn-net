@@ -1,6 +1,26 @@
 (function() {
   'use strict';
 
+  // ===================== HELPERS =====================
+  function findColIndex(columns, col) {
+    return columns.findIndex(function(c) { return c.toLowerCase() === col; });
+  }
+
+  function applySorting(rows, columns, input) {
+    var orderMatch = input.match(/ORDER\s+BY\s+(\w+)(?:\s+(ASC|DESC))?/i);
+    if (!orderMatch) return rows;
+    var orderCol = orderMatch[1].toLowerCase();
+    var orderDir = (orderMatch[2] || 'ASC').toUpperCase();
+    var orderIdx = findColIndex(columns, orderCol);
+    if (orderIdx === -1) return rows;
+    rows.sort(function(a, b) {
+      var va = a[orderIdx], vb = b[orderIdx];
+      var cmp = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb));
+      return orderDir === 'DESC' ? -cmp : cmp;
+    });
+    return rows;
+  }
+
   // ===================== TERMINAL =====================
   var terminalWrap = document.getElementById('terminal-wrap');
   document.getElementById('boot-screen').style.display = 'none';
@@ -29,14 +49,19 @@
     terminal.scrollTop = terminal.scrollHeight;
   }
 
+  var isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
   function focusInput() {
+    if (isTouchDevice) return;
     cmdInput.focus();
     setTimeout(function() { cmdInput.scrollIntoView({ block: 'nearest' }); }, 300);
   }
-  terminal.addEventListener('click', focusInput);
+  terminal.addEventListener('click', function() {
+    cmdInput.focus();
+  });
 
   function printMotd() {
-    printOutput('<span class="heading">martjn_db v1.0</span>\n<span class="dim">Type HELP for help, SHOW TABLES to list tables, or press ESC for menu navigation.</span>\n');
+    printOutput('<span class="heading">' + VERSION + '</span>\n<span class="dim">Type HELP for help, SHOW TABLES to list tables, or press ESC for menu navigation.</span>\n');
   }
 
   // ===================== RENDER SUGGESTIONS =====================
@@ -55,7 +80,8 @@
       btn.addEventListener('click', (function(query) {
         return function() {
           processCommand(query);
-          focusInput();
+          scrollToBottom();
+          if (!menuMode) focusInput();
         };
       })(s.query));
       suggestionsEl.appendChild(btn);
@@ -72,7 +98,6 @@
       highlightSuggestion(-1);
       if (menuMode) setMenuMode(false);
       renderSuggestions(tab.dataset.tab);
-      focusInput();
     });
   });
 
@@ -159,7 +184,6 @@
       if (e.key === 'Enter' && kbSuggIdx >= 0 && kbSuggIdx < items.length) {
         e.preventDefault();
         items[kbSuggIdx].click();
-        setMenuMode(false);
         return;
       }
 
@@ -203,7 +227,9 @@
           out += ' <span class="' + cls + '">' + ' '.repeat(pad) + display + '</span> <span class="border">│</span>';
         } else {
           var rawVal = String(vals[i] || '');
-          if (rawVal.indexOf('http') === 0) {
+          if (rawVal === '__IMG__') {
+            out += ' <img class="mail-img" src="mail.png" alt="contact">';
+          } else if (rawVal.indexOf('http') === 0) {
             out += ' <a class="link" href="' + escapeHtml(rawVal) + '" target="_blank">' + display + '</a>' + ' '.repeat(pad) + ' <span class="border">│</span>';
           } else {
             out += ' <span class="' + cls + '">' + display + '</span>' + ' '.repeat(pad) + ' <span class="border">│</span>';
@@ -245,7 +271,7 @@
     if (upper === 'EXIT' || upper === 'QUIT') return cmdExit();
     if (upper === 'CLEAR') { outputEl.innerHTML = ''; return; }
     if (upper.startsWith('SELECT')) return cmdSelect(trimmed);
-    if (upper.startsWith('EXPLAIN')) return cmdExplain(trimmed);
+    if (upper.startsWith('EXPLAIN')) return cmdExplain();
 
     if (upper.startsWith('DROP')) {
       printOutput('<span class="error">ERROR:  permission denied — this portfolio is immutable</span>');
@@ -269,16 +295,47 @@
 
   // ===================== COMMANDS =====================
   function cmdHelp() {
-    printOutput('\n<span class="heading">SQL commands:</span>\n\n  <span class="kw">SHOW TABLES</span>      List all tables\n  <span class="kw">DESCRIBE</span> <span class="tbl">table</span>    Show table schema\n  <span class="kw">SELECT</span> ...        Query data (supports *, WHERE, ORDER BY, LIMIT, GROUP BY)\n  <span class="kw">EXPLAIN</span> ...       Show query plan\n  <span class="kw">HELP</span>             Show this help\n  <span class="kw">CLEAR</span>            Clear screen\n  <span class="kw">EXIT</span>             Quit (nice try)\n\n<span class="heading">Tables:</span>  <span class="tbl">profile</span> · <span class="tbl">skills</span> · <span class="tbl">tools</span> · <span class="tbl">experience</span>\n         <span class="tbl">dive_log</span> · <span class="tbl">dive_certs</span> · <span class="tbl">dive_stats</span>\n         <span class="tbl">blocks</span> · <span class="tbl">transactions</span> · <span class="tbl">addresses</span> · <span class="tbl">mempool</span>\n\n<span class="heading">Keyboard shortcuts:</span>\n\n  <span class="dim">┌──────────────────────────────────────────────────────┐</span>\n  <span class="dim">│</span> <span class="kw">Input mode</span> <span class="dim">(default)</span>                                  <span class="dim">│</span>\n  <span class="dim">├────────────────┬─────────────────────────────────────┤</span>\n  <span class="dim">│</span>  Enter          <span class="dim">│</span> Execute SQL command                  <span class="dim">│</span>\n  <span class="dim">│</span>  ↑ / ↓          <span class="dim">│</span> Browse command history                <span class="dim">│</span>\n  <span class="dim">│</span>  Tab            <span class="dim">│</span> Auto-complete table names / keywords  <span class="dim">│</span>\n  <span class="dim">│</span>  Ctrl+L         <span class="dim">│</span> Clear screen                          <span class="dim">│</span>\n  <span class="dim">│</span>  <span class="heading">Escape</span>         <span class="dim">│</span> <span class="heading">Switch to menu mode</span>                   <span class="dim">│</span>\n  <span class="dim">├──────────────────────────────────────────────────────┤</span>\n  <span class="dim">│</span> <span class="kw">Menu mode</span> <span class="dim">(press Escape to enter)</span>                    <span class="dim">│</span>\n  <span class="dim">├────────────────┬─────────────────────────────────────┤</span>\n  <span class="dim">│</span>  ← / →          <span class="dim">│</span> Switch tabs                           <span class="dim">│</span>\n  <span class="dim">│</span>  ↑ / ↓          <span class="dim">│</span> Navigate query suggestions            <span class="dim">│</span>\n  <span class="dim">│</span>  Enter          <span class="dim">│</span> Execute selected query                <span class="dim">│</span>\n  <span class="dim">│</span>  Escape         <span class="dim">│</span> Back to input mode                    <span class="dim">│</span>\n  <span class="dim">│</span>  Type anything  <span class="dim">│</span> Back to input mode + type             <span class="dim">│</span>\n  <span class="dim">└────────────────┴─────────────────────────────────────┘</span>\n\n<span class="dim">Or just click one of the suggested queries below.</span>');
+    var bySchema = {};
+    Object.keys(TABLES).forEach(function(name) {
+      var s = TABLE_SCHEMA[name] || 'public';
+      if (!bySchema[s]) bySchema[s] = [];
+      bySchema[s].push(name);
+    });
+    var tablesStr = Object.keys(bySchema).map(function(s) {
+      return '  <span class="dim">' + s + ':</span>  ' + bySchema[s].map(function(t) { return '<span class="tbl">' + t + '</span>'; }).join(' · ');
+    }).join('\n');
+
+    printOutput('\n<span class="heading">SQL commands:</span>\n\n  <span class="kw">SHOW TABLES</span>      List all tables\n  <span class="kw">DESCRIBE</span> <span class="tbl">table</span>    Show table schema\n  <span class="kw">SELECT</span> ...        Query data (supports *, WHERE, ORDER BY, LIMIT, GROUP BY)\n  <span class="kw">EXPLAIN</span> ...       Show query plan\n  <span class="kw">HELP</span>             Show this help\n  <span class="kw">CLEAR</span>            Clear screen\n  <span class="kw">EXIT</span>             Quit (nice try)\n\n<span class="heading">Tables:</span>\n' + tablesStr + '\n\n<span class="heading">Keyboard shortcuts:</span>\n\n  <span class="dim">┌──────────────────────────────────────────────────────┐</span>\n  <span class="dim">│</span> <span class="kw">Input mode</span> <span class="dim">(default)</span>                                  <span class="dim">│</span>\n  <span class="dim">├────────────────┬─────────────────────────────────────┤</span>\n  <span class="dim">│</span>  Enter          <span class="dim">│</span> Execute SQL command                  <span class="dim">│</span>\n  <span class="dim">│</span>  ↑ / ↓          <span class="dim">│</span> Browse command history                <span class="dim">│</span>\n  <span class="dim">│</span>  Tab            <span class="dim">│</span> Auto-complete table names / keywords  <span class="dim">│</span>\n  <span class="dim">│</span>  Ctrl+L         <span class="dim">│</span> Clear screen                          <span class="dim">│</span>\n  <span class="dim">│</span>  <span class="heading">Escape</span>         <span class="dim">│</span> <span class="heading">Switch to menu mode</span>                   <span class="dim">│</span>\n  <span class="dim">├──────────────────────────────────────────────────────┤</span>\n  <span class="dim">│</span> <span class="kw">Menu mode</span> <span class="dim">(press Escape to enter)</span>                    <span class="dim">│</span>\n  <span class="dim">├────────────────┬─────────────────────────────────────┤</span>\n  <span class="dim">│</span>  ← / →          <span class="dim">│</span> Switch tabs                           <span class="dim">│</span>\n  <span class="dim">│</span>  ↑ / ↓          <span class="dim">│</span> Navigate query suggestions            <span class="dim">│</span>\n  <span class="dim">│</span>  Enter          <span class="dim">│</span> Execute selected query                <span class="dim">│</span>\n  <span class="dim">│</span>  Escape         <span class="dim">│</span> Back to input mode                    <span class="dim">│</span>\n  <span class="dim">│</span>  Type anything  <span class="dim">│</span> Back to input mode + type             <span class="dim">│</span>\n  <span class="dim">└────────────────┴─────────────────────────────────────┘</span>\n\n<span class="dim">Or just click one of the suggested queries below.</span>');
   }
 
   function cmdListTables() {
     var rows = Object.keys(TABLES).map(function(name) {
       var t = TABLES[name];
-      return [name, 'table', 'martjn', t.rows.length + ' rows'];
+      var schema = TABLE_SCHEMA[name] || 'public';
+      return [schema, name, 'table', t.rows.length + ' rows'];
     });
     printOutput('\n<span class="heading">          List of relations</span>');
-    printOutput(renderTable(['Name', 'Type', 'Owner', 'Size'], rows, ['varchar','varchar','varchar','varchar']));
+    printOutput(renderTable(['Schema', 'Name', 'Type', 'Size'], rows, ['varchar','varchar','varchar','varchar']));
+    // Make table names clickable
+    var nameLinks = outputEl.querySelectorAll('.row-even, .row-odd');
+    nameLinks.forEach(function(span) {
+      var text = span.textContent;
+      Object.keys(TABLES).forEach(function(name) {
+        if (text.indexOf(name) !== -1 && !span.dataset.linked) {
+          var re = new RegExp('(' + name + ')');
+          span.innerHTML = span.innerHTML.replace(re, '<span class="link table-link" data-table="' + name + '">$1</span>');
+          span.dataset.linked = '1';
+        }
+      });
+    });
+    outputEl.querySelectorAll('.table-link').forEach(function(link) {
+      link.addEventListener('click', function() {
+        var name = link.dataset.table;
+        var schema = TABLE_SCHEMA[name] || 'public';
+        cmdInput.value = 'SELECT * FROM ' + schema + '.' + name + ';';
+        cmdInput.focus();
+      });
+    });
   }
 
   function cmdDescribeTable(name) {
@@ -287,8 +344,9 @@
       printOutput('<span class="error">ERROR:  relation "' + escapeHtml(name) + '" does not exist</span>');
       return;
     }
+    var schema = TABLE_SCHEMA[name.toLowerCase()] || 'public';
     var rows = table.columns.map(function(c, i) { return [c, table.types[i], 'NO']; });
-    printOutput('\n<span class="heading">          Table "public.' + name.toLowerCase() + '"</span>');
+    printOutput('\n<span class="heading">          Table "' + schema + '.' + name.toLowerCase() + '"</span>');
     printOutput(renderTable(['Column', 'Type', 'Nullable'], rows, ['varchar','varchar','varchar']));
   }
 
@@ -305,8 +363,8 @@
     var upper = input.toUpperCase().replace(/\s+/g, ' ');
 
     // Special: uptime query
-    if (upper.indexOf('DATEDIFF') !== -1 || (upper.indexOf('NOW()') !== -1 && upper.indexOf('2008') !== -1)) {
-      var start = new Date('2008-11-01');
+    if (upper.indexOf('DATEDIFF') !== -1) {
+      var start = new Date(UPTIME_START);
       var now = new Date();
       var days = Math.floor((now - start) / 86400000);
       var years = Math.floor(days / 365);
@@ -315,7 +373,7 @@
     }
 
     if (upper.indexOf('VERSION()') !== -1) {
-      printOutput(renderTable(['version'], [['martjn_db v1.0 (Data Engineer Edition)']], ['varchar']));
+      printOutput(renderTable(['version'], [[VERSION + ' (Interactive SQL Edition)']], ['varchar']));
       return;
     }
 
@@ -324,7 +382,7 @@
       return;
     }
 
-    var fromMatch = input.match(/FROM\s+(\w+)/i);
+    var fromMatch = input.match(/FROM\s+(?:\w+\.)?(\w+)/i);
     if (!fromMatch) {
       printOutput('<span class="error">ERROR:  specify a FROM table — try: SELECT * FROM profile;</span>');
       return;
@@ -333,7 +391,7 @@
     var tableName = fromMatch[1].toLowerCase();
     var table = TABLES[tableName];
     if (!table) {
-      printOutput('<span class="error">ERROR:  relation "' + escapeHtml(fromMatch[1]) + '" does not exist</span>\n<span class="dim">Available: profile, skills, tools, experience, blocks, transactions, addresses, mempool</span>');
+      printOutput('<span class="error">ERROR:  relation "' + escapeHtml(fromMatch[1]) + '" does not exist</span>\n<span class="dim">Available: ' + Object.keys(TABLES).join(', ') + '</span>');
       return;
     }
 
@@ -367,16 +425,19 @@
       selectedCols = table.columns.slice();
       colIndices = table.columns.map(function(_, i) { return i; });
     } else {
-      var parts = selStr.split(',').map(function(s) { return s.trim().toLowerCase(); });
+      var parts = selStr.split(',').map(function(s) { return s.trim(); });
       selectedCols = [];
       colIndices = [];
       for (var p = 0; p < parts.length; p++) {
-        var idx = table.columns.findIndex(function(c) { return c.toLowerCase() === parts[p]; });
+        var aliasMatch = parts[p].match(/^(\S+)\s+AS\s+(\S+)$/i);
+        var colName = aliasMatch ? aliasMatch[1].toLowerCase() : parts[p].toLowerCase();
+        var alias = aliasMatch ? aliasMatch[2] : null;
+        var idx = findColIndex(table.columns, colName);
         if (idx === -1) {
-          printOutput('<span class="error">ERROR:  column "' + escapeHtml(parts[p]) + '" does not exist in ' + tableName + '</span>\n<span class="dim">Columns: ' + table.columns.join(', ') + '</span>');
+          printOutput('<span class="error">ERROR:  column "' + escapeHtml(colName) + '" does not exist in ' + tableName + '</span>\n<span class="dim">Columns: ' + table.columns.join(', ') + '</span>');
           return;
         }
-        selectedCols.push(table.columns[idx]);
+        selectedCols.push(alias || table.columns[idx]);
         colIndices.push(idx);
       }
     }
@@ -390,19 +451,7 @@
     }
     var rows = fullRows.map(function(r) { return colIndices.map(function(i) { return r[i]; }); });
 
-    var orderMatch = input.match(/ORDER\s+BY\s+(\w+)(?:\s+(ASC|DESC))?/i);
-    if (orderMatch) {
-      var orderCol = orderMatch[1].toLowerCase();
-      var orderDir = (orderMatch[2] || 'ASC').toUpperCase();
-      var orderIdx = selectedCols.findIndex(function(c) { return c.toLowerCase() === orderCol; });
-      if (orderIdx !== -1) {
-        rows.sort(function(a, b) {
-          var va = a[orderIdx], vb = b[orderIdx];
-          var cmp = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb));
-          return orderDir === 'DESC' ? -cmp : cmp;
-        });
-      }
-    }
+    applySorting(rows, selectedCols, input);
 
     var limitMatch = input.match(/LIMIT\s+(\d+)/i);
     if (limitMatch) {
@@ -418,7 +467,7 @@
       if (inMatch) {
         var col = inMatch[1].toLowerCase();
         var vals = inMatch[2].split(',').map(function(v) { return v.trim().replace(/'/g, ''); });
-        var idx = cols.findIndex(function(c) { return c.toLowerCase() === col; });
+        var idx = findColIndex(cols, col);
         if (idx === -1) return true;
         return vals.some(function(v) { return String(row[idx]).toLowerCase() === v.toLowerCase(); });
       }
@@ -428,7 +477,7 @@
         var col2 = cmpMatch[1].toLowerCase();
         var op = cmpMatch[2].toUpperCase();
         var val = cmpMatch[3];
-        var idx2 = cols.findIndex(function(c) { return c.toLowerCase() === col2; });
+        var idx2 = findColIndex(cols, col2);
         if (idx2 === -1) return true;
         var cellVal = row[idx2];
         var numVal = parseFloat(val);
@@ -451,7 +500,7 @@
   }
 
   function cmdSelectAggregate(input, table, tableName, groupCol) {
-    var groupIdx = table.columns.findIndex(function(c) { return c.toLowerCase() === groupCol; });
+    var groupIdx = findColIndex(table.columns, groupCol);
     if (groupIdx === -1) {
       printOutput('<span class="error">ERROR:  column "' + escapeHtml(groupCol) + '" does not exist</span>');
       return;
@@ -502,10 +551,9 @@
         if (def.type === 'col') {
           resRow.push(gKey);
         } else {
-          var colIdx = def.col === '*' ? -1 : table.columns.findIndex(function(c) { return c.toLowerCase() === def.col; });
+          var colIdx = def.col === '*' ? -1 : findColIndex(table.columns, def.col);
           var vals = colIdx === -1 ? gRows : gRows.map(function(r) { return r[colIdx]; }).filter(function(v) { return typeof v === 'number'; });
-          var fn = def.type === 'roundagg' ? def.func : def.func;
-          switch (fn) {
+          switch (def.func) {
             case 'COUNT': resRow.push(def.col === '*' ? gRows.length : vals.length); break;
             case 'AVG': resRow.push(vals.length ? Math.round(vals.reduce(function(a,b) { return a+b; }, 0) / vals.length) : 0); break;
             case 'SUM': resRow.push(vals.reduce(function(a,b) { return a+b; }, 0)); break;
@@ -518,19 +566,7 @@
       resRows.push(resRow);
     }
 
-    var orderMatch = input.match(/ORDER\s+BY\s+(\w+)(?:\s+(ASC|DESC))?/i);
-    if (orderMatch) {
-      var orderCol = orderMatch[1].toLowerCase();
-      var orderDir = (orderMatch[2] || 'ASC').toUpperCase();
-      var orderIdx = resCols.indexOf(orderCol);
-      if (orderIdx !== -1) {
-        resRows.sort(function(a, b) {
-          var va = a[orderIdx], vb = b[orderIdx];
-          var cmp = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb));
-          return orderDir === 'DESC' ? -cmp : cmp;
-        });
-      }
-    }
+    applySorting(resRows, resCols, input);
 
     printOutput(renderTable(resCols, resRows, resTypes));
   }
@@ -609,17 +645,11 @@
     var jsonLd = {
       '@context': 'https://schema.org',
       '@type': 'Person',
-      name: p.name || 'Martin',
+      name: p.name || 'martjn',
       url: p.website || 'https://martjn.net',
-      jobTitle: p.role || 'Data Engineer',
-      worksFor: {
-        '@type': 'Organization',
-        name: p.company || 'sipgate',
-        url: 'https://www.sipgate.de'
-      },
+      jobTitle: p.role || 'Data & Crypto Enthusiast · Diver',
       knowsAbout: knowsAbout,
-      sameAs: [p.github].filter(Boolean),
-      description: (p.role || 'Data Engineer') + ' at ' + (p.company || 'sipgate') + ', building ETL pipelines and data platforms with ' + knowsAbout.slice(0, 3).join(', ') + '.',
+      description: (p.role || 'Data & Crypto Enthusiast · Diver') + '. Interactive SQL terminal with dive logbook and blockchain data.',
       knowsLanguage: ['de', 'en'],
       hasCredential: certs
     };
@@ -641,11 +671,11 @@
     var seoEl = document.getElementById('seo-content');
     if (seoEl) {
       seoEl.innerHTML =
-        '<h1>' + (p.name || 'Martin') + ' — ' + (p.role || 'Data Engineer') + ' at ' + (p.company || 'sipgate') + '</h1>' +
+        '<h1>' + (p.name || 'martjn') + ' — ' + (p.role || 'Data & Crypto Enthusiast · Diver') + '</h1>' +
         '<p>' + (p.motto || '') + '</p>' +
         '<h2>Skills</h2><ul>' + skillsHtml + '</ul>' +
         '<h2>Diving</h2><p>Certified diver (' + certNames + '). ' + diveCount + ' logged dives across Germany and Europe.</p>' +
-        '<h2>Contact</h2><p>Website: <a href="' + (p.website || '') + '">' + (p.website || '') + '</a> · GitHub: <a href="' + (p.github || '') + '">' + (p.github || '') + '</a></p>';
+        '<h2>Contact</h2><p>Website: <a href="' + (p.website || '') + '">' + (p.website || '') + '</a></p>';
     }
   })();
 
