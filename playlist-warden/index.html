@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playlist Warden for YouTube — fair caps, cleanup &amp; shuffle for shared playlists</title>
+<meta name="description" content="Playlist Warden keeps collaborative YouTube playlists fair and clean: per-contributor caps, dead-link and duplicate pruning, content rules, and shuffle — as a one-click chain on the playlist page.">
+<link rel="canonical" href="https://martjn.net/playlist-warden/">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Playlist Warden <span class="accent">for YouTube</span></h1>
+    <p class="muted">Fair caps, cleanup &amp; shuffle for shared playlists.</p>
+    <p>
+      <span class="badge">Chrome</span>
+      <span class="badge">Local-first</span>
+      <span class="badge">No account</span>
+    </p>
+  </header>
+
+  <section class="card">
+    <h2>What it does</h2>
+    <p>Collaborative YouTube playlists fill up unevenly: some people add a lot,
+      links rot, duplicates sneak in. Playlist Warden keeps shared playlists fair
+      and clean with a single click on the „Run maintenance“ button right on the
+      YouTube playlist page:</p>
+    <ul class="checks">
+      <li><strong>Fair caps</strong> — limit how many videos each contributor may
+        keep on a shared playlist; the oldest surplus goes.</li>
+      <li><strong>Cleanup (prune)</strong> — removes dead or unavailable videos
+        (deleted/private/rejected) and duplicates across the whole playlist.</li>
+      <li><strong>Content rules</strong> — optional filters for music category,
+        age restriction, duration, title keywords, channels, and region blocks.</li>
+      <li><strong>Shuffle</strong> — a real reshuffle after cleanup, so the final
+        order is fresh.</li>
+      <li><strong>Overview first</strong> — checks and dry-run plans before a
+        single change is written; every action lands in a local audit log.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>How it works</h2>
+    <p>The extension integrates into the YouTube playlist page as a native-feeling
+      button. Maintenance runs as a chain: <code>checks → cap → prune →
+      shuffle</code>. Reads and writes use the official YouTube Data API v3 with
+      your own Google sign-in (OAuth); writes only ever run on playlists you own.
+      Contributor attribution is read from the collaborative playlist's avatar
+      stack — the only place YouTube exposes it.</p>
+  </section>
+
+  <section class="card">
+    <h2>Privacy by design</h2>
+    <ul class="checks">
+      <li>Everything stays in your browser profile — playlists, rules, tokens,
+        logs. There is no backend.</li>
+      <li>No analytics, no tracking, no ads, no third-party requests beyond
+        googleapis.com.</li>
+      <li>Open source.</li>
+    </ul>
+    <p>Details: <a href="/playlist-warden/privacy.html">Privacy Policy</a>.</p>
+  </section>
+
+  <section class="card">
+    <h2>Install</h2>
+    <p>Chrome Web Store listing: <em>coming soon</em>. Until then, the extension
+      can be loaded unpacked from the source repository.</p>
+  </section>
+
+  <footer>
+    <p class="muted"><a href="/">martjn.net</a> · <a href="/playlist-warden/privacy.html">Privacy policy</a></p>
+  </footer>
+</main>
+</body>
+</html>

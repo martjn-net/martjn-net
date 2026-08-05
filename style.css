@@ -1,0 +1,52 @@
+:root {
+  --bg: #0a0a0a;
+  --fg: #e8e8e8;
+  --muted: #8a9494;
+  --accent: #00d4aa;
+  --card: #111416;
+  --line: #1f2426;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.6 ui-monospace, "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+main { max-width: 760px; margin: 0 auto; padding: 48px 20px 80px; }
+h1 { font-size: 28px; margin: 0 0 4px; }
+h2 { font-size: 18px; margin: 0 0 8px; }
+h3 { font-size: 15px; margin: 24px 0 6px; color: var(--accent); }
+p, li { color: #c9d1d3; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.accent { color: var(--accent); }
+.muted { color: var(--muted); }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin: 18px 0;
+}
+.card h2 a { color: var(--fg); }
+.card h2 a:hover { color: var(--accent); text-decoration: none; }
+ul.checks { list-style: none; padding: 0; margin: 12px 0; }
+ul.checks li { padding-left: 1.4em; position: relative; margin: 6px 0; }
+ul.checks li::before { content: "✓"; color: var(--accent); position: absolute; left: 0; }
+code {
+  background: #181d1f;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.9em;
+}
+.badge {
+  display: inline-block;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 12px;
+  padding: 1px 10px;
+  font-size: 12px;
+  margin-right: 6px;
+}
+footer { margin-top: 48px; border-top: 1px solid var(--line); padding-top: 16px; }
